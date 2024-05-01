@@ -4,8 +4,8 @@ from mpl_toolkits.mplot3d import Axes3D
 
 # List of filenames
 #n = [123, 100]
-#filenames = ['10.npy', '25.npy', '50.npy', '100.npy']
-filenames = ['21.npy', '100.npy']
+filenames = ['5000.npy', '70.npy', '80.npy', '500.npy']
+#filenames = ['21.npy', '100.npy']
 #filenames = [f'test_{i}.npy' for i in n]
 
 # Create a new figure

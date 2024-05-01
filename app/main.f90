@@ -21,14 +21,14 @@ contains
 
     integer, intent(in) :: L
     real(8), intent(in) :: V0
-    integer :: i, ierr, Lc
+    integer :: i, j, ierr, Lc
     real(8) :: Vinc
     real(8), allocatable :: vol(:,:), coarse(:,:)
     type(fitpack_grid_surface) :: surface
     Lc = L/2
     allocate(vol(2*L,L), coarse(2*Lc,2*Lc))
   
-    if (L <= 40) then
+    if (L <= 50) then
       Vinc=V0/L
       vol=0.0d0
 
@@ -47,9 +47,13 @@ contains
       ierr = surface%new_fit([(real(i, kind=8)/(Lc-1), i=0, Lc-1)], [(real(i, kind=8)/(Lc-1/2), i=0, 2*Lc-1)], coarse, 0.0d0, 3)
       vol = surface%eval( [(real(i, kind=8)/(real(L, kind=8)-1.0), i=0, L-1)], &
                           [(real(i, kind=8)/(real(L, kind=8)-0.5), i=0, 2*L-1)], ierr)
-      print *, ierr
       vol(:, [1,L]) = 0.0d0
       vol([1, 2*L], :) = 0.0d0
+      do j=2,L-2
+        do i=2, L-j
+          vol(i,j) = 0.0d0
+        end do
+      end do
       Vinc=V0/L
       do i=0, L-1
         vol(L+i, 1) = V0-Vinc*i
@@ -67,7 +71,6 @@ contains
     real(8) :: new
 
     do while (loop)
-      n = n+1
       loop=.false.
       do j=2,L-1
         do i=L+2-j, 2*L-1
@@ -84,7 +87,6 @@ contains
         vol(L+1-j,j) = new
       end do
     end do
-    print *, n
   end subroutine relax
 
 end program main
