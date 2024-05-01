@@ -42,7 +42,7 @@ contains
 
     ! Check if the number of arguments is correct
     if (arg_count /= 3) then
-        print *, "Usage: ./relaxation -L <N> filename.h5"
+        print *, "Usage: ./relaxation <L> <V0> <filename.npy>"
         stop
     end if
 
