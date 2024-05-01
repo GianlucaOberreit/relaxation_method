@@ -1,0 +1,4 @@
+build/
+*.npy
+.env
+**/maintest.f90
