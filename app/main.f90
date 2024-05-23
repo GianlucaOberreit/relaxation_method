@@ -2,17 +2,28 @@ program main
   use fitpack_grid_surfaces
   use Utils
   implicit none
-  integer :: L
-  real(8) :: V0
+  integer :: L, i
+  real(8) :: V0, T1, T2, Vinc
   character(len=80) :: filename
   real(8), allocatable :: vol(:,:), grid(:,:)
   
   call parse_command_line(L, V0, filename)
   allocate(vol(2*L,L), grid(2*L,2*L))
   
-  vol = interpolate(L, V0)
+  call cpu_time(T1)
+  !vol = interpolate(L, V0)
+  Vinc=V0/L
+  vol=0.0d0
+
+  do i=0, L-1
+    vol(L+i, 1) = V0-Vinc*i
+  end do
+
+  call relax(vol, L)
+  call cpu_time(T2)
 
   grid = combine(vol)
+  print *, T2-T1
   call write2file(filename, grid)
   deallocate(vol, grid)
 contains
@@ -28,7 +39,7 @@ contains
     Lc = L/2
     allocate(vol(2*L,L), coarse(2*Lc,2*Lc))
   
-    if (L <= 50) then
+    if (L <= 20) then
       Vinc=V0/L
       vol=0.0d0
 
@@ -64,29 +75,30 @@ contains
   end function interpolate
 
   subroutine relax(vol, L)
-    real(8), intent(inout) :: vol(:, :)
+    real(8), target, intent(inout) :: vol(:, :)
     integer, intent(in) :: L
-    integer :: i, j, k, n=0
-    logical :: loop=.true.
-    real(8) :: new
+    real(8), target, dimension(2*L,L) :: next_vol, diff
+    real(8), pointer :: old(:,:), new(:,:), tmp(:,:)
+    real(8) :: eps=1E-5
 
-    do while (loop)
-      loop=.false.
-      do j=2,L-1
-        do i=L+2-j, 2*L-1
-          new = (vol(i-1,j) + vol(i+1,j) + vol(i,j-1) + vol(i,j+1)) / 4.0
-          if (abs(new - vol(i,j)) > 1E-5) then
-            loop=.true.
-          end if
-          vol(i,j) = new
-        end do
-        new = (2*vol(L+2-j,j) + 2*vol(L+1-j,j+1)) / 4.0
-        if (abs(new - vol(L+1-j,j)) > 1E-5) then
-          loop=.true.
-        end if
-        vol(L+1-j,j) = new
-      end do
+    next_vol = vol
+    old => vol
+    new => next_vol
+    diff = 1.0d0
+    !call Print2D(diff)
+    !print *, maxval(abs(diff))
+    !print *, maxval(abs(diff)) < eps
+
+    do while (maxval(abs(diff)) > eps) !(n < 5)!
+      !call Print2D(old)
+      new(2:2*L-1, 2:L-1) = (old(2:2*L-1, 1:L-2) + old(2:2*L-1, 3:L) + old(1:2*L-2, 2:L-1) + old(3:2*L, 2:L-1)) / 4.0d0 
+      new(2:L-1,1) = new(L,L-1:2:-1)
+      diff = new-old
+      tmp => new
+      new => old
+      old => tmp
     end do
+    vol = new
   end subroutine relax
 
 end program main
