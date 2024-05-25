@@ -10,7 +10,7 @@ program main
   call parse_command_line(L, V0, filename)
   allocate(vol(2*L,L), grid(2*L,2*L))
   
-  vol = interpolate(L, V0)
+  vol = interpolate(L)
 
   grid = combine(vol)
   call write2file(filename, grid)
@@ -18,14 +18,12 @@ program main
   deallocate(vol, grid)
 contains
 
-  recursive function interpolate(L, V0) result(vol)
+  recursive function interpolate(L) result(vol)
 
     integer, intent(in) :: L
-    real(8), intent(in) :: V0
-    integer :: i, j, Lc
+    integer :: i, Lc
     real(8) :: Vinc
     real(8), allocatable :: vol(:,:), coarse(:,:)
-    real(8), dimension(2*L, 2*L) :: grid
     Lc = L/2
     allocate(vol(2*L,L), coarse(2*Lc,2*Lc))
   
@@ -40,12 +38,9 @@ contains
       call relax(vol, L)
     else
       Vinc=V0/Lc
-      coarse=interpolate(Lc, V0)
+      coarse=interpolate(Lc)
       
       vol = fit(L, Lc, coarse)
-
-      !grid = combine(vol)
-      !call write2file('interpolated.npy', grid)
 
       vol(:, [1,L]) = 0.0d0
       vol([1, 2*L], :) = 0.0d0
@@ -62,9 +57,10 @@ contains
   subroutine relax(vol, L)
     real(8), target, intent(inout) :: vol(:, :)
     integer, intent(in) :: L
-    real(8), target, dimension(2*L,L) :: next_vol, diff
+    real(8), target, allocatable, dimension(:,:) :: next_vol, diff
     real(8), pointer :: old(:,:), new(:,:), tmp(:,:)
     real(8) :: eps=1E-5
+    allocate(next_vol(2*L,L), diff(2*L,L))
 
     next_vol = vol
     old => vol
